@@ -19,8 +19,6 @@ target 'community' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  pod 'react-native-location', :path => '../node_modules/react-native-location'
-
   target 'communityTests' do
     inherit! :complete
     # Pods for testing
