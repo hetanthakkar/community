@@ -1,4 +1,4 @@
-rootProject.name = 'fuck'
+rootProject.name = 'community'
 include ':react-native-location'
 project(':react-native-location').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-location/android')
 include ':react-native-location'
