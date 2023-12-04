@@ -17,6 +17,7 @@ import {connect} from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import styles from './styles';
+import { AppleButton,appleAuth } from '@invertase/react-native-apple-authentication';
 
 const mainColor = '#045DE9';
 const {width} = Dimensions.get('window');
@@ -87,6 +88,22 @@ class Home extends React.Component {
                   source={{uri: this.props.user.profilePhoto}}
                 />
               </View>
+              <AppleButton
+        buttonStyle={AppleButton.Style.WHITE}
+        buttonType={AppleButton.Type.SIGN_IN}
+        style={{
+          width: 160, // You must specify a width
+          height: 45, // You must specify a height
+        }}
+        onPress={async() => {
+          const appleAuthRequestResponse = await appleAuth.performRequest({
+            requestedOperation: appleAuth.Operation.LOGIN,
+            // Note: it appears putting FULL_NAME first is important, see issue #293
+            requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+          });
+        console.log('apple',appleAuthRequestResponse)
+        }}
+      />
               <View
                 style={{
                   padding: 10,
@@ -186,7 +203,7 @@ class Home extends React.Component {
                 </View>
                 <View style={{flex: 0.25, margin: 10}}>
                   <TouchableOpacity
-                    onPress={() => this.props.navigation.navigate('Chat')}>
+                    onPress={() => this.props.navigation.navigate('CourseSubCatScreen')}>
                     <LinearGradient
                       colors={['#09C6F9', '#045DE9']}
                       start={{x: 1, y: 0}}
@@ -218,7 +235,7 @@ class Home extends React.Component {
                 <View style={{flex: 0.25, margin: 10}}>
                   <TouchableOpacity
                     onPress={async () => {
-                      this.props.navigation.navigate('ChatList');
+                      this.props.navigation.navigate('ChatsNavigator');
                     }}>
                     <LinearGradient
                       colors={['#09C6F9', '#045DE9']}
@@ -252,7 +269,7 @@ class Home extends React.Component {
                 </View>
                 <View style={{flex: 0.25, margin: 10}}>
                   <TouchableOpacity
-                    onPress={() => this.props.navigation.navigate('Map')}>
+                    onPress={() => this.props.navigation.navigate('MapScreen')}>
                     <LinearGradient
                       colors={['#09C6F9', '#045DE9']}
                       // colors={["#fc0f84", "#020cab"]}
@@ -297,7 +314,7 @@ class Home extends React.Component {
                 <TouchableOpacity
                   style={styles.shoppingbody}
                   onPress={() =>
-                    this.props.navigation.navigate('Profile', {
+                    this.props.navigation.navigate('CourseSubCatScreen', {
                       tech: 'React',
                     })
                   }>

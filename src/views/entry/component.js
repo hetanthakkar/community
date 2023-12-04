@@ -32,10 +32,11 @@ const App = props => {
 
   const renderScreens = () => {
     console.log('user is', user);
-    if (user !== 0 && user !== -1) {
+    if (true||user !== 0 && user !== -1) {
       return (
         <NavigationContainer>
           <Stack.Navigator>
+            
             <Stack.Screen
               name="Home"
               component={HomeTab}
