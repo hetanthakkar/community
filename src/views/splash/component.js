@@ -30,7 +30,7 @@ const slides = [
   },
   {
     key: 3,
-    title: "Let's Get Started",
+    title: "ted",
     text: 'Enter your coding interests, mention the project details and find out the suitable coding partner',
     image: require('../../../assets/teamwork.png'),
     backgroundColor: '#22bcb5',

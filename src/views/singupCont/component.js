@@ -92,6 +92,7 @@ class App extends React.Component {
     })
       .then((result) => result.json())
       .then(async (data) => {
+        console.log("hey usa",data)
         this.props.saveInfo(data);
       });
   };

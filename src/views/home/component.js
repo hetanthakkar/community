@@ -3,7 +3,6 @@ import {changeTheme, addInfo} from '../../actions';
 import {
   View,
   Text,
-  BackHandler,
   ScrollView,
   Image,
   TouchableOpacity,
@@ -11,44 +10,85 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
+  Alert,
+  FlatList,
+  StyleSheet,
 } from 'react-native';
 import Icon from './icons';
 import {connect} from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import styles from './styles';
-import { AppleButton,appleAuth } from '@invertase/react-native-apple-authentication';
 
 const mainColor = '#045DE9';
 const {width} = Dimensions.get('window');
 var screenHeight = Math.round(Dimensions.get('window').height) / 100;
 var screenWidth = Math.round(Dimensions.get('window').width) / 100;
-
+const categories = [
+  'Category 1',
+  'Category 2',
+  'Category 3',
+  'Category 4',
+  'Category 5',
+  // Add more categories as needed
+];
 class Home extends React.Component {
   state = {
     size: {width, height: 150},
     fontsLoaded: false,
+    user:null
   };
 
   componentDidMount = async () => {
-    BackHandler.addEventListener('hardwareBackPress', this.handleBackButton);
+    // BackHandler.addEventListener('hardwareBackPress', this.handleBackButton);
     await this.setState({fontsLoaded: true});
-    const token = await AsyncStorage.getItem('token');
+    // const token = await AsyncStorage.getItem('token');
     // console.log("tokeeen is", token);
-    fetch('http://192.168.1.184:3000/getUser', {
+    let res = await fetch('http://127.0.0.1:5000/user', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
       body: JSON.stringify({
-        token,
+        email: 'hetanthakkar1@gmail.com',
+        role: 1,
       }),
-    })
-      .then(result => result.json())
-      .then(async data => {
-        await this.props.saveInfo(data);
-      })
-      .catch(err => console.log(err));
+    });
+    
+    if (res.ok) {
+      const data = await res.text();
+      let user=JSON.parse(data).user
+      this.setState({user})
+      await AsyncStorage.setItem('user_email',user[3]);
+      await AsyncStorage.setItem('user_name',user[1]);
+      await AsyncStorage.setItem('user_id',JSON.stringify(user[0]));
+      // props.navigation.navigate('Home');
+    } else {
+      console.error('Error:', res.statusText);
+      Alert.alert('Enter valid email/password');
+    }
+
+    let res2 = await fetch('http://127.0.0.1:5000/categories', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+    });
+
+    
+    if (res2.ok) {
+      // const data = await res.text();
+      const cat= await res2.json()
+      let categories=cat.categories
+      console.log(categories)
+      this.setState({categories})
+      // props.navigation.navigate('Home');
+    } else {
+      console.error('Error:', res.statusText);
+      Alert.alert('Enter valid email/password');
+    }
   };
   handleBackButton = () => {
     this.props.navigation.navigate('Signup');
@@ -58,6 +98,17 @@ class Home extends React.Component {
     if (this.props.theme == 'light') this.props.setTheme('dark');
     else this.props.setTheme('light');
   };
+
+   renderCategoryItem = ({ item }) => (
+    <TouchableOpacity style={styles1.categoryContainer} onPress={()=>{
+      this.props.navigation.navigate('CourseSubCatScreen', {
+        name: item?.name,
+        id:item?.cat_id
+      })
+    }}>
+      <Text style={styles1.categoryText}>{item?.name}</Text>
+    </TouchableOpacity>
+  );
   render() {
     if (this.state.fontsLoaded) {
       return (
@@ -88,22 +139,7 @@ class Home extends React.Component {
                   source={{uri: this.props.user.profilePhoto}}
                 />
               </View>
-              <AppleButton
-        buttonStyle={AppleButton.Style.WHITE}
-        buttonType={AppleButton.Type.SIGN_IN}
-        style={{
-          width: 160, // You must specify a width
-          height: 45, // You must specify a height
-        }}
-        onPress={async() => {
-          const appleAuthRequestResponse = await appleAuth.performRequest({
-            requestedOperation: appleAuth.Operation.LOGIN,
-            // Note: it appears putting FULL_NAME first is important, see issue #293
-            requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
-          });
-        console.log('apple',appleAuthRequestResponse)
-        }}
-      />
+             
               <View
                 style={{
                   padding: 10,
@@ -113,27 +149,14 @@ class Home extends React.Component {
                 <View style={{flexDirection: 'row'}}>
                   <Text
                     style={{
-                      fontSize: 20,
+                      fontSize: 14,
                       color:
                         this.props.theme == 'light' ? '#141519' : '#F1EEFc',
                       fontWeight: 'bold',
                     }}>
-                    {this.props.user.name}
+                    {this.state?.user && this?.state?.user[1]}
                   </Text>
-                  <TouchableOpacity
-                    onPress={this.changeTheme}
-                    style={{marginLeft: screenWidth * 20}}>
-                    <Icon
-                      size={30}
-                      style={{}}
-                      color={this.props.theme == 'light' ? 'black' : '#f8fafd'}
-                      name={
-                        this.props.theme == 'light'
-                          ? 'sunny-outline'
-                          : 'moon-outline'
-                      }
-                    />
-                  </TouchableOpacity>
+                  
                 </View>
                 <Text
                   style={{
@@ -142,7 +165,7 @@ class Home extends React.Component {
                     fontSize: 18,
                     opacity: 0.85,
                   }}>
-                  {this.props.user.email}
+                  {this.state?.user && this?.state?.user[3]}
                 </Text>
                 <Text
                   style={{
@@ -203,7 +226,7 @@ class Home extends React.Component {
                 </View>
                 <View style={{flex: 0.25, margin: 10}}>
                   <TouchableOpacity
-                    onPress={() => this.props.navigation.navigate('CourseSubCatScreen')}>
+                    onPress={() => this.props.navigation.navigate('CoursesNavigator')}>
                     <LinearGradient
                       colors={['#09C6F9', '#045DE9']}
                       start={{x: 1, y: 0}}
@@ -227,7 +250,7 @@ class Home extends React.Component {
                         color:
                           this.props.theme == 'light' ? '#141519' : '#f8fafd',
                       }}>
-                      Rooms
+                      Courses
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -310,486 +333,13 @@ class Home extends React.Component {
                 backgroundColor:
                   this.props.theme == 'dark' ? '#141519' : '#f8fafd',
               }}>
-              <View style={styles.shoppingCotainer}>
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('CourseSubCatScreen', {
-                      tech: 'React',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="Fontisto"
-                      name="react"
-                      size={20}
-                      color={this.props.theme == 'dark' ? '#045DE9' : '#045DE9'}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    React
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('Category', {
-                      tech: 'Angular JS',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderRadius: 20,
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="Fontisto"
-                      name="angularjs"
-                      size={20}
-                      color="#045DE9"
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    AngularJS
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.shoppingCotainer}>
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('Category', {
-                      tech: 'Vue JS',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="Fontisto"
-                      name="vuejs"
-                      size={20}
-                      color={mainColor}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    VueJS
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('Category', {
-                      tech: 'cloud',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="Fontisto"
-                      name="aws"
-                      size={20}
-                      color={mainColor}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    Cloud
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.shoppingCotainer}>
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('Category', {
-                      tech: 'Python',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="Fontisto"
-                      name="python"
-                      size={20}
-                      color={mainColor}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    Python
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('Category', {
-                      tech: 'Kotlin',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="MaterialCommunityIcons"
-                      name="language-kotlin"
-                      size={20}
-                      color={mainColor}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    Kotlin
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.shoppingCotainer}>
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('Category', {
-                      tech: 'HTML & CSS',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="FontAwesome"
-                      name="html5"
-                      size={20}
-                      color={mainColor}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    HTML CSS
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('Category', {
-                      tech: 'Javascript',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="MaterialCommunityIcons"
-                      name="language-javascript"
-                      size={20}
-                      color={mainColor}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    JavaScript
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.shoppingCotainer}>
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('Category', {
-                      tech: 'Php',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="MaterialCommunityIcons"
-                      name="language-php"
-                      size={20}
-                      color={mainColor}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    Php
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('Category', {
-                      tech: 'NodeJS',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="Fontisto"
-                      name="nodejs"
-                      size={20}
-                      color={mainColor}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    NodeJS
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.shoppingCotainer}>
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('Category', {
-                      tech: 'Unity',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="Fontisto"
-                      name="unity"
-                      size={20}
-                      color={mainColor}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    Unity
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('Category', {
-                      tech: 'ML & AI',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="MaterialCommunityIcons"
-                      name="robot"
-                      size={20}
-                      color={mainColor}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    ML & AI
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.shoppingCotainer}>
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('Category', {
-                      tech: 'Swift',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="MaterialCommunityIcons"
-                      name="language-swift"
-                      size={20}
-                      color={mainColor}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    Swift
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.shoppingbody}
-                  onPress={() =>
-                    this.props.navigation.navigate('Category', {
-                      tech: 'Other',
-                    })
-                  }>
-                  <View
-                    style={[
-                      styles.shoppingtxt1,
-                      {
-                        // backgroundColor:
-                        //   this.props.theme == "light" ? "#141519" : "#f8fafd",
-                        borderWidth: 1,
-                        borderColor: '#025B95',
-                      },
-                    ]}>
-                    <Icon
-                      family="MaterialCommunityIcons"
-                      name="dots-horizontal"
-                      size={20}
-                      color={mainColor}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color:
-                        this.props.theme == 'light' ? '#141519' : '#f8fafd',
-                    }}>
-                    Other
-                  </Text>
-                </TouchableOpacity>
-              </View>
+           {this.state?.categories && <FlatList
+      data={this.state?.categories}
+      keyExtractor={(item, index) => index.toString()}
+      renderItem={this.renderCategoryItem}
+      numColumns={2}
+      contentContainerStyle={styles1.flatListContainer}
+    />}
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -799,6 +349,30 @@ class Home extends React.Component {
     }
   }
 }
+
+const styles1 = StyleSheet.create({
+  flatListContainer: {
+    padding: 16,
+    marginLeft:'5%',
+    justifyContent:'space-between'
+  },
+  categoryContainer: {
+    // flex: 1,
+    margin: 8,
+    padding: 16,
+    marginRight:20,
+    // width:400,
+    // height:100,
+    backgroundColor: '#09C6F9',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
 
 const mapStateToProps = state => {
   return {

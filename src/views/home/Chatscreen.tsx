@@ -1,13 +1,92 @@
-import { StyleSheet, Text, View, ScrollView, KeyboardAvoidingView, Image, TouchableOpacity, TextInput, FlatList } from 'react-native'
-import React, { useState } from 'react'
+import { StyleSheet, Text, View, ScrollView, KeyboardAvoidingView, Image, TouchableOpacity, TextInput, FlatList, Alert } from 'react-native'
+import React, { useEffect, useRef, useState } from 'react'
 import { horizontalScale } from './util/theme'
 import EmojiSelector from 'react-native-emoji-selector'
+import { io } from "socket.io-client";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const ChatScreen = () => {
+
+const ChatScreen = (props) => {
+  console.log(props?.route?.params?.teacher?.id,"asd")
   const [messages, setMessages] = useState([]); // Array to store messages
   const [text, setText] = useState(''); // Array to store messages
   const [isEmojiSelectorVisible, setIsEmojiSelectorVisible] = useState(false);
   const textInputRef = React.createRef(); // Initialize the ref
+  const socket = useRef();
+  const scrollViewRef = useRef();
+
+  const initSocket = () => {
+    socket.current = io('http://127.0.0.1:5000');
+    
+    // ... listen for events and clean up socket connection
+  };
+
+  useEffect(() => {
+    initSocket();
+
+    socket.current.on('conn', (data) => {
+      console.log("this is data",data)
+     
+
+    });
+
+    socket.current.on('chat', (data) => {
+      console.log("this is asdjknfakjsdnf",data)
+     
+
+    });
+    
+
+    // console.log("Asdfk",socket)
+    // Connect to the socket when the component mounts
+    // socket.current = io('http://127.0.0.1:5000');
+
+    // Listen for chat events
+    socket.current.on('chat', (data) => {
+      console.log("this is data",data)
+      data=JSON.parse(data)
+      setMessages([...messages, { content: data.message, sender: data.username  }]);
+    });
+
+     socket.current.emit('set_student', 1);
+     socket.current.emit('set_teacher', 4);
+     socket.current.emit('set_sender', 'hetanthakkar1@gmail.com');
+     socket.current.emit('set_reciever', 'hetanthakkar2@gmail.com');
+
+     const fetchSubcategories=async()=>{
+
+      let student_id=await AsyncStorage.getItem("user_id")
+      let res = await fetch('http://127.0.0.1:5000/get_chat_history', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          student_id: Number(student_id),
+          teacher_id: props?.route?.params?.teacher?.id,
+        }),
+      });
+      console.log("res2 sub",res)
+      
+      if (res.ok) {
+        // const data = await res.text();
+        const cat= await res.json()
+        // let subcategories=cat.subcategories
+        setMessages(cat)
+        // props.navigation.navigate('Home');
+      } else {
+        
+        Alert.alert('Enter valid email/password');
+      }
+    }
+  
+    fetchSubcategories()
+    // Clean up socket connection when the component unmounts
+    return () => {
+      socket.current.disconnect();
+    };
+  }, []);
 
   const handleEmojiSelected = (emoji) => {
     console.log('Selected Emoji:', emoji);
@@ -20,11 +99,12 @@ const ChatScreen = () => {
     setIsEmojiSelectorVisible(true);
   };
 
-  const sendMessage = (text) => {
-    // Update state with new message
-    setMessages([...messages, { text }]);
-    // Clear input field
+  const sendMessage = async(text) => {
+
     textInputRef.current.clear();
+
+    await socket.current.emit('new_message',[text,1,4,'hetanthakkar1@gmail.com','hetanthakkar2@gmail.com']);
+
   };
 
   return (
@@ -32,11 +112,12 @@ const ChatScreen = () => {
       flex: 1,
       backgroundColor: '#F0F0F0',
     }}>
-      <ScrollView>
+      <ScrollView   ref={scrollViewRef}
+      onContentSizeChange={() => scrollViewRef.current.scrollToEnd({ animated: true })}>
         <FlatList
           data={messages} // Render each message in the list
           renderItem={({ item }) => (
-            <Text style={{ padding: 10, borderBottomWidth: 1, borderColor: 'gray' }}>{item.text}</Text>
+            <Text style={{ padding: 10, borderBottomWidth: 1, borderColor: 'gray' }}>{item?.sender}: {item?.content}</Text>
           )}
           keyExtractor={(item) => item.id || Math.random().toString()} // Set unique key for each item
         />
@@ -51,14 +132,7 @@ const ChatScreen = () => {
         <TouchableOpacity
           onPress={showEmojiSelector}
         >
-          <Image
-            style={{
-              width: 30,
-              height: 30,
-            }}
-            resizeMode="contain"
-            source={require('./assets/emoji.png')}
-          />
+
         </TouchableOpacity>
 
         <TextInput
@@ -86,20 +160,12 @@ const ChatScreen = () => {
             marginLeft: horizontalScale(3),
             color: 'white',
             fontWeight: '600',
-          }}>Send</Text>
+          }}>Send{JSON.stringify(messages.length)}</Text>
         </TouchableOpacity>
 
       </View>
 
-      {isEmojiSelectorVisible &&
-        <EmojiSelector
-          style={{
-            height: 450,
-          }}
-          visible={isEmojiSelectorVisible}
-          onEmojiSelected={handleEmojiSelected}
-        />
-      }
+
     </KeyboardAvoidingView>
   );
 };

@@ -40,7 +40,7 @@ const App = props => {
     <Provider store={store}>
         <HomeStack.Navigator>
      <HomeStack.Screen
-          options={{ headerShown:false }}
+          options={{ }}
           name="HomeScreen"
           component={Signup} />
         <HomeStack.Screen
@@ -52,7 +52,7 @@ const App = props => {
           name="ChatsNavigator"
           component={ChatNavigator} />
         <HomeStack.Screen
-          options={{ headerShown:false }}
+          options={{ }}
           name="CoursesNavigator"
           component={CoursesNavigator} />
         <HomeStack.Screen
@@ -98,8 +98,8 @@ function CoursesNavigator() {
     }}
     >
       <CoursesTopTab.Screen name="Current" component={Current} />
+      <CoursesTopTab.Screen name="Cart" component={Previous} />
       <CoursesTopTab.Screen name="Wishlist" component={Wishlist} />
-      <CoursesTopTab.Screen name="Previous" component={Previous} />
     </CoursesTopTab.Navigator>
   );
 }

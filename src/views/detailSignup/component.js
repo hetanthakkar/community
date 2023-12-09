@@ -42,6 +42,8 @@ const App = (props) => {
     if (image) {
       user.profilePhoto = image;
     }
+    console.log("user usa",user)
+
     await props.saveInfo(user);
     await fetch("http://192.168.1.184:3000/modifyUser", {
       method: "POST",

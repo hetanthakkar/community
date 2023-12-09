@@ -1,5 +1,5 @@
-import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import React from 'react'
+import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import React, { useEffect } from 'react'
 import { useNavigation } from '@react-navigation/native';
 
 
@@ -9,6 +9,7 @@ const data = [
   
   ];
   
+
 
 
   const renderItem = ({ item, index }) => (
@@ -24,9 +25,40 @@ const data = [
   );
   
 
-const CourseCategoryScreen = () => {
+const CourseCategoryScreen = (props) => {
     const navigation = useNavigation()
     const [refreshing, setRefreshing] = React.useState(false);
+    const [courses, setCourses] = React.useState([]);
+
+
+    useEffect(()=>{
+
+      const fetchSubcategories=async()=>{
+        let res2 = await fetch(`http://127.0.0.1:5000/courses`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+        });
+        console.log("res2 sub",res2)
+        
+        if (res2.ok) {
+          // const data = await res.text();
+          const cat= await res2.json()
+          let courses=cat.courses
+          console.log(props?.route?.params?.subcategory)
+          let relevantCourses=courses?.filter((course)=>course?.subcat_id==props?.route?.params?.subcategory?.subcat_id)
+          setCourses(relevantCourses)
+          // props.navigation.navigate('Home');
+        } else {
+          
+          Alert.alert('Enter valid email/password');
+        }
+      }
+    
+      fetchSubcategories()
+    },[])
 
     const onRefresh = React.useCallback(() => {
       setRefreshing(true);
@@ -34,18 +66,23 @@ const CourseCategoryScreen = () => {
         setRefreshing(false);
       }, 2000);
     }, []);
+
+   if (courses && courses.length>0){ 
   return (
     <FlatList
-      data={data}
+      data={courses}
       renderItem={({ item, index }) => (
         <TouchableOpacity 
-        onPress={()=>navigation.navigate('CourseDetailScreen')}
+        onPress={()=>navigation.navigate('CourseDetailScreen',{course:item})}
         style={styles.itemContainer}>
-          <Text style={styles.index}>{index + 1}</Text>
-          <View style={styles.textContainer}>
-            <Text style={styles.courseName}>{item.name}</Text>
-            <Text style={styles.description}>{item.description}</Text>
-          </View>
+       <View style={styles.card}>
+      <Text style={styles.title}>Description: {item?.description}</Text>
+      <Text style={styles.content}>Content: {item?.content}</Text>
+      <Text style={styles.details}>
+        Lessons: {item?.number_of_lessons} | Price: ${item?.price} | Ratings: {item?.ratings}
+      </Text>
+    </View>
+
         </TouchableOpacity>
       )}
       keyExtractor={(item) => item.id}
@@ -53,7 +90,10 @@ const CourseCategoryScreen = () => {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     />
-  );
+  )}
+  else{
+    return <ActivityIndicator/>
+  }
 }
 
 export default CourseCategoryScreen
@@ -84,5 +124,29 @@ const styles = StyleSheet.create({
     description: {
       fontSize: 14,
       color: '#7f8c8d',
+    },
+    card: {
+      backgroundColor: '#fff',
+      borderRadius: 8,
+      padding: 16,
+      margin: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 5,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 8,
+    },
+    content: {
+      fontSize: 16,
+      marginBottom: 8,
+    },
+    details: {
+      fontSize: 14,
+      color: '#666',
     },
   });

@@ -1,4 +1,5 @@
-import React from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect } from 'react';
 import { View, FlatList, Text, StyleSheet, RefreshControl } from 'react-native';
 
 const data = [
@@ -11,14 +12,40 @@ const renderItem = ({ item, index }) => (
   <View style={styles.itemContainer}>
     <Text style={styles.index}>{index + 1}</Text>
     <View style={styles.textContainer}>
-      <Text style={styles.courseName}>{item.name}</Text>
+      <Text style={styles.courseName}>{item.content}</Text>
       <Text style={styles.description}>{item.description}</Text>
     </View>
   </View>
 );
 
-const Current = () => {
-    const [refreshing, setRefreshing] = React.useState(false);
+const Previous = () => {
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [courses, setCourses] = React.useState([]);
+
+
+  const fetch_cart=async()=>{
+
+    
+    let res1 = await fetch(`http://127.0.0.1:5000/courses`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+    });
+    console.log("adfsd",res1)
+    if (res1.ok) {
+
+      const data = await res1.text();
+      console.log("data",JSON.parse(data))
+      setCourses(JSON.parse(data).courses)
+  }
+}
+
+  useEffect(()=>{
+
+    fetch_cart()
+  },[])
 
     const onRefresh = React.useCallback(() => {
       setRefreshing(true);
@@ -28,7 +55,7 @@ const Current = () => {
     }, []);
   return (
     <FlatList
-      data={data}
+      data={courses}
       renderItem={renderItem}
       keyExtractor={(item) => item.id}
       refreshControl={
@@ -66,4 +93,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Current;
+export default Previous;

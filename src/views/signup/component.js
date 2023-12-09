@@ -8,6 +8,7 @@ import {
   StatusBar,
   Platform,
   Image,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {connect} from 'react-redux';
@@ -146,36 +147,26 @@ let Form = props => {
   };
 
   const signInWithGoogleAsync = async () => {
-    try {
-      await GoogleSignin.hasPlayServices();
-      const result = await GoogleSignin.signIn();
-      console.log('rejult', result);
-      fetch('http://192.168.90.158:3000/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          phone: 1234,
-          name: result.user.givenName + ' ' + result.user.familyName,
-          profilePhoto: result.user.photoUrl,
-          password: result.idToken,
-          location: 123,
-        }),
-      })
-        .then(result => result.json())
-        .then(async data => {
-          if (data == 'saved') {
-            await AsyncStorage.setItem('token', result.idToken);
-            props.navigation.navigate('Signup Cont');
-          }
-        })
-        .catch(err => {
-          console.log(err);
-        });
-    } catch (error) {
-      console.log('error', error);
+    let res = await fetch('http://127.0.0.1:5000/user/signup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        name: props.name,
+        password: props.password,
+        email: props.email,
+        role: 1,
+      }),
+    });
+    
+    if (res.ok) {
+      const data = await res.text();
+      await AsyncStorage.setItem('token', data);
+      props.navigation.navigate('Home');
+    } else {
+      Alert.alert('Enter valid email/password');
     }
   };
   const [scrollHeight, setScrollHeight] = React.useState(0);
@@ -183,7 +174,7 @@ let Form = props => {
   const submit = () => {
     console.log('ljdfnkj', props);
     // smsSend();
-    // props.navigation.navigate('Signup Cont');
+    props.navigation.navigate('Signup Cont');
   };
 
   const onContentSizeChange = (contentWidth, contentHeight) => {
@@ -290,7 +281,7 @@ let Form = props => {
 
         <TouchableOpacity
           style={{...styles.createAccount, marginTop: getMarginTop()}}
-          onPress={props.handleSubmit(submit)}>
+          onPress={props.handleSubmit(signInWithGoogleAsync)}>
           <Text style={styles.phoneText}>Sign Up</Text>
         </TouchableOpacity>
         {/* <Text
@@ -305,7 +296,7 @@ let Form = props => {
         }}>
         Or Sign Up with
       </Text> */}
-        <View
+        {/* <View
           style={{
             flexDirection: 'row',
             justifyContent: 'space-evenly',
@@ -342,7 +333,7 @@ let Form = props => {
               }}
             />
           </TouchableOpacity>
-        </View>
+        </View> */}
       </ScrollView>
     </SafeAreaView>
   );

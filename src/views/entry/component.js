@@ -20,6 +20,7 @@ const App = props => {
   const [user, setUser] = React.useState(0);
   React.useEffect(() => {
     async function abc() {
+      // AsyncStorage.clear()
       const token = await AsyncStorage.getItem('token');
       if (token) {
         setUser(token);
@@ -32,7 +33,7 @@ const App = props => {
 
   const renderScreens = () => {
     console.log('user is', user);
-    if (true||user !== 0 && user !== -1) {
+    if (user !== 0 && user !== -1) {
       return (
         <NavigationContainer>
           <Stack.Navigator>
@@ -52,13 +53,13 @@ const App = props => {
                 // headerShown: false,
               }}
             />
-            <Stack.Screen
+            {/* <Stack.Screen
               name="Splash Screen"
               component={Splash}
               options={{
                 headerShown: false,
               }}
-            />
+            /> */}
             <Stack.Screen
               name="Login Screen"
               component={Login}
@@ -123,14 +124,14 @@ const App = props => {
       return (
         <NavigationContainer>
           <Stack.Navigator>
-            <Stack.Screen
+            {/* <Stack.Screen
               name="Splash Screen"
               component={Splash}
               options={{
                 headerShown: false,
               }}
-            />
-            <Stack.Screen
+            /> */}
+            {/* <Stack.Screen
               name="Otp Screen"
               component={Otp}
               options={{
@@ -142,9 +143,9 @@ const App = props => {
 
                 headerTransparent: true,
               }}
-            />
+            /> */}
 
-            <Stack.Screen
+            {/* <Stack.Screen
               name="Login Screen"
               component={Login}
               options={{
@@ -156,7 +157,7 @@ const App = props => {
                 headerTransparent: Platform.OS == 'ios' ? true : true,
                 headerShown: Platform.OS == 'ios' ? true : false,
               }}
-            />
+            /> */}
             <Stack.Screen
               name="Signup"
               component={Signup}
